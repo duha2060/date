@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Прогулка в субботу</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --card: #1c1c24;
+      --accent: #ff4d8d;
+      --accent2: #ff8fb8;
+      --text: #f5f5f7;
+      --muted: #9b9ba7;
+      --success: #4ade80;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .screen.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    p {
+      font-size: 1.1rem;
+      line-height: 1.5;
+      text-align: center;
+      color: var(--muted);
+      max-width: 320px;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 16px 36px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: transform 0.15s;
+      box-shadow: 0 8px 24px rgba(255, 77, 141, 0.3);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Game 1 */
+    #game1-area {
+      position: relative;
+      width: 100%;
+      height: 55vh;
+      overflow: hidden;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+      margin-bottom: 16px;
+    }
+
+    .falling {
+      position: absolute;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.1s, opacity 0.25s;
+    }
+
+    .falling.heart {
+      background: transparent;
+      font-size: 1.8rem;
+      padding: 0;
+    }
+
+    .falling.good {
+      border: 2px solid var(--accent);
+    }
+
+    .falling.caught {
+      transform: scale(1.4);
+      opacity: 0;
+    }
+
+    .game-ui {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .game-ui span {
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    /* Game 2 */
+    #swipe-container {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      height: 280px;
+      margin-bottom: 20px;
+    }
+
+    .swipe-card {
+      position: absolute;
+      inset: 0;
+      background: var(--card);
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+      transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.35s;
+      touch-action: none;
+    }
+
+    .swipe-card h2 {
+      font-size: 1.35rem;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    .swipe-card .hint {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+
+    .swipe-actions {
+      display: flex;
+      gap: 40px;
+      margin-top: 8px;
+    }
+
+    .swipe-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.6rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s;
+      background: #2a2a35;
+    }
+
+    .swipe-btn:active { transform: scale(0.9); }
+    .swipe-left { color: #ff6b6b; }
+    .swipe-right { color: var(--success); }
+
+    /* Game 3 */
+    #tapper-area {
+      position: relative;
+      width: 100%;
+      height: 50vh;
+      margin-bottom: 16px;
+    }
+
+    .tap-btn {
+      position: absolute;
+      padding: 12px 18px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255, 77, 141, 0.4);
+      animation: popIn 0.25s ease;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .tap-btn:active { transform: scale(0.9); }
+    .tap-btn.caught {
+      opacity: 0;
+      transform: scale(1.3);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.3); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .progress-wrap {
+      width: 100%;
+      max-width: 320px;
+      height: 12px;
+      background: var(--card);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 20px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* Final */
+    .final-emoji {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      animation: bounce 1.2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .reaction {
+      position: fixed;
+      top: 40%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card);
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+
+    .reaction.show { opacity: 1; }
+
+    .confetti {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      animation: fall linear forwards;
+      z-index: 50;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="reaction" id="reaction"></div>
+
+  <!-- 1. START -->
+  <div class="screen active" id="screen-start">
+    <h1>Прогулка в субботу</h1>
+    <p>Хочешь узнать куда?</p>
+    <button class="btn" onclick="showPrep()">Да</button>
+  </div>
+
+  <!-- 2. PREP -->
+  <div class="screen" id="screen-prep">
+    <h1>Тогда пройди все задания<br>и узнаешь</h1>
+    <p style="margin-top: 8px;">Готова?</p>
+    <button class="btn" onclick="startGame()">Начать</button>
+  </div>
+
+  <!-- GAME 1: CATCH -->
+  <div class="screen" id="screen-game1">
+    <div class="game-ui">
+      <div>Поймано: <span id="catch-score">0</span>/8</div>
+      <div id="catch-timer">0:35</div>
+    </div>
+    <div id="game1-area"></div>
+    <p style="margin-bottom: 0; font-size: 0.95rem;">Лови только «секрет», «суббота», «прогулка» и сердечки</p>
+  </div>
+
+  <!-- GAME 1 RESULT -->
+  <div class="screen" id="screen-game1-result">
+    <h1>Неплохо</h1>
+    <p>Но этого мало❤️</p>
+    <button class="btn" onclick="startSwipe()">Дальше</button>
+  </div>
+
+  <!-- GAME 2: SWIPE -->
+  <div class="screen" id="screen-game2">
+    <p style="margin-bottom: 16px;">Какой способ сработает?</p>
+    <div id="swipe-container"></div>
+    <div class="swipe-actions">
+      <button class="swipe-btn swipe-left" onclick="swipeCard('left')">✕</button>
+      <button class="swipe-btn swipe-right" onclick="swipeCard('right')">♥</button>
+    </div>
+  </div>
+
+  <!-- GAME 2 RESULT -->
+  <div class="screen" id="screen-game2-result">
+    <h1>Настойчиво</h1>
+    <button class="btn" onclick="startTapper()">Последнее задание</button>
+  </div>
+
+  <!-- GAME 3: TAPPER -->
+  <div class="screen" id="screen-game3">
+    <div class="progress-wrap">
+      <div class="progress-bar" id="tap-progress"></div>
+    </div>
+    <div class="progress-text" id="tap-progress-text">0%</div>
+    <div id="tapper-area"></div>
+    <p style="margin-bottom: 0; font-size: 0.95rem;">Тапай быстрее</p>
+  </div>
+
+  <!-- FINAL -->
+  <div class="screen" id="screen-final">
+    <div class="final-emoji">😌</div>
+    <h1>Ну почти...</h1>
+    <p>
+      Ты прошла все задания<br><br>
+      Но я всё равно не скажу, куда мы пойдём<br><br>
+      Я тебя люблю, солнышко, в субботу пойдём с тобой в секретное место<br>
+    </p>
+    <button class="btn" onclick="sendAgree()">Хорошо</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor('#0f0f13');
+      tg.setBackgroundColor('#0f0f13');
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showReaction(text, duration = 1200) {
+      const r = document.getElementById('reaction');
+      r.textContent = text;
+      r.classList.add('show');
+      setTimeout(() => r.classList.remove('show'), duration);
+    }
+
+    function confetti() {
+      for (let i = 0; i < 35; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.background = ['#ff4d8d', '#ff8fb8', '#4ade80', '#fbbf24', '#a78bfa'][Math.floor(Math.random()*5)];
+        c.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+        c.style.animationDelay = Math.random() * 0.5 + 's';
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 3500);
+      }
+    }
+
+    function showPrep() {
+      showScreen('screen-prep');
+    }
+
+    function startGame() {
+      showScreen('screen-game1');
+      startCatchGame();
+    }
+
+    // ===== GAME 1: CATCH =====
+    let catchScore = 0;
+    let catchInterval, catchTimerInterval;
+    let catchTimeLeft = 35;
+    const goodWords = ['секрет', 'суббота', 'прогулка', '❤️', '💕', '✨'];
+    const badWords = ['понедельник', 'работа', 'нет', 'потом', 'может', 'не знаю', 'хз'];
+
+    function startCatchGame() {
+      catchScore = 0;
+      catchTimeLeft = 35;
+      document.getElementById('catch-score').textContent = '0';
+      document.getElementById('catch-timer').textContent = '0:35';
+      document.getElementById('game1-area').innerHTML = '';
+
+      catchInterval = setInterval(spawnFalling, 480);
+      catchTimerInterval = setInterval(() => {
+        catchTimeLeft--;
+        const m = Math.floor(catchTimeLeft / 60);
+        const s = catchTimeLeft % 60;
+        document.getElementById('catch-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        if (catchTimeLeft <= 0 || catchScore >= 8) endCatchGame();
+      }, 1000);
+    }
+
+    function spawnFalling() {
+      const area = document.getElementById('game1-area');
+      if (!area) return;
+
+      const isGood = Math.random() > 0.45;
+      const el = document.createElement('div');
+      el.className = 'falling' + (isGood ? ' good' : '');
+
+      if (isGood && Math.random() > 0.5) {
+        el.classList.add('heart');
+        el.textContent = ['❤️','💕','💖','✨'][Math.floor(Math.random()*4)];
+      } else {
+        const list = isGood ? goodWords.filter(w => w.length > 2) : badWords;
+        el.textContent = list[Math.floor(Math.random() * list.length)];
+      }
+
+      el.style.left = (10 + Math.random() * 70) + '%';
+      el.style.top = '-40px';
+      area.appendChild(el);
+
+      let pos = -40;
+      const speed = 1.8 + Math.random() * 1.4;
+      const fall = setInterval(() => {
+        pos += speed;
+        el.style.top = pos + 'px';
+        if (pos > area.clientHeight + 20) {
+          clearInterval(fall);
+          el.remove();
+        }
+      }, 16);
+
+      el.addEventListener('click', () => {
+        clearInterval(fall);
+        el.classList.add('caught');
+        if (isGood) {
+          catchScore++;
+          document.getElementById('catch-score').textContent = catchScore;
+          showReaction(['Есть!', 'Хорошо', 'Поймала', 'Ок'][Math.floor(Math.random()*4)]);
+          if (catchScore >= 8) endCatchGame();
+        } else {
+          showReaction(['Не то', 'Мимо', 'Нет'][Math.floor(Math.random()*3)]);
+        }
+        setTimeout(() => el.remove(), 280);
+      });
+    }
+
+    function endCatchGame() {
+      clearInterval(catchInterval);
+      clearInterval(catchTimerInterval);
+      setTimeout(() => showScreen('screen-game1-result'), 500);
+    }
+
+    // ===== GAME 2: SWIPE =====
+    const swipeCards = [
+      { text: 'Сделать грустные глаза' },
+      { text: 'Сказать «ну пожалуйста» много раз' },
+      { text: 'Начать угадывать вслух' },
+      { text: 'Пригрозить, что не пойду' },
+      { text: 'Просто молча смотреть' },
+      { text: 'Написать «я всё знаю»' },
+    ];
+    let currentCard = 0;
+    let startX = 0;
+
+    function startSwipe() {
+      currentCard = 0;
+      showScreen('screen-game2');
+      renderCard();
+    }
+
+    function renderCard() {
+      const container = document.getElementById('swipe-container');
+      container.innerHTML = '';
+      if (currentCard >= swipeCards.length) {
+        showScreen('screen-game2-result');
+        return;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'swipe-card';
+      card.innerHTML = `
+        <h2>${swipeCards[currentCard].text}</h2>
+        <div class="hint">свайпни или нажми кнопки</div>
+      `;
+      container.appendChild(card);
+
+      card.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+      }, {passive: true});
+
+      card.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 60) {
+          swipeCard(dx > 0 ? 'right' : 'left');
+        }
+      }, {passive: true});
+    }
+
+    function swipeCard(dir) {
+      const card = document.querySelector('.swipe-card');
+      if (!card) return;
+
+      const isRight = dir === 'right';
+      card.style.transform = `translateX(${isRight ? 140 : -140}%) rotate(${isRight ? 12 : -12}deg)`;
+      card.style.opacity = '0';
+
+      const reactionsRight = ['Может быть', 'Хм', 'Засчитаю', 'Ок'];
+      const reactionsLeft = ['Бесполезно', 'Нет', 'Мимо', 'Не сработает'];
+      showReaction(isRight ? reactionsRight[Math.floor(Math.random()*4)] : reactionsLeft[Math.floor(Math.random()*4)]);
+
+      setTimeout(() => {
+        currentCard++;
+        renderCard();
+      }, 320);
+    }
+
+    // ===== GAME 3: TAPPER =====
+    let tapProgress = 0;
+    let tapInterval;
+    const tapWords = ['Скажи', 'Ну пожалуйста', 'Куда?', 'Секрет', 'Давай', 'Скажиии', 'Ну же'];
+
+    function startTapper() {
+      tapProgress = 0;
+      document.getElementById('tap-progress').style.width = '0%';
+      document.getElementById('tap-progress-text').textContent = '0%';
+      showScreen('screen-game3');
+      document.getElementById('tapper-area').innerHTML = '';
+
+      tapInterval = setInterval(spawnTapBtn, 420);
+    }
+
+    function spawnTapBtn() {
+      const area = document.getElementById('tapper-area');
+      if (!area || tapProgress >= 93) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'tap-btn';
+      btn.textContent = tapWords[Math.floor(Math.random() * tapWords.length)];
+
+      const maxX = area.clientWidth - 110;
+      const maxY = area.clientHeight - 50;
+      btn.style.left = Math.max(10, Math.random() * maxX) + 'px';
+      btn.style.top = Math.max(10, Math.random() * maxY) + 'px';
+
+      btn.addEventListener('click', () => {
+        btn.classList.add('caught');
+        tapProgress += 4 + Math.random() * 3;
+        if (tapProgress > 93) tapProgress = 93;
+        document.getElementById('tap-progress').style.width = tapProgress + '%';
+        document.getElementById('tap-progress-text').textContent = Math.floor(tapProgress) + '%';
+
+        if (tapProgress >= 91) {
+          clearInterval(tapInterval);
+          setTimeout(() => {
+            showReaction('Почти...');
+            setTimeout(() => {
+              confetti();
+              showScreen('screen-final');
+            }, 800);
+          }, 350);
+        }
+
+        setTimeout(() => btn.remove(), 250);
+      });
+
+      area.appendChild(btn);
+
+      setTimeout(() => {
+        if (btn.parentNode) {
+          btn.style.opacity = '0';
+          setTimeout(() => btn.remove(), 200);
+        }
+      }, 1600);
+    }
+
+    // FINAL
+    function sendAgree() {
+      if (tg) {
+        tg.sendData(JSON.stringify({
+          action: 'agree',
+          message: 'Я готова к прогулке в субботу'
+        }));
+        tg.close();
+      } else {
+        alert('Я готова к прогулке в субботу');
+      }
+    }
+  </script>
+</body>
+</html>
