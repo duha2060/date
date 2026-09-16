@@ -418,56 +418,67 @@
       startCatchGame();
     }
 
-    // ===== GAME 1: CATCH =====
-    let catchScore = 0;
-    let catchInterval, catchTimerInterval;
-    let catchTimeLeft = 35;
-    const goodWords = ['❤️','💕','💖','✨'];
-    const badWords = ['нет', 'потом', 'не знаю', 'хз'];
+// ===== GAME 1: CATCH =====
+let catchScore = 0;
+let catchInterval, catchTimerInterval;
+let catchTimeLeft = 35;
 
-    function startCatchGame() {
-      catchScore = 0;
-      catchTimeLeft = 35;
-      document.getElementById('catch-score').textContent = '0';
-      document.getElementById('catch-timer').textContent = '0:35';
-      document.getElementById('game1-area').innerHTML = '';
+const goodWords = ['❤️', '💕', '💖', '💗', '💓', '💞'];
+const badWords  = ['нет', 'потом', 'не знаю', 'хз', 'не скажу', 'потом'];
 
-      catchInterval = setInterval(spawnFalling, 480);
-      catchTimerInterval = setInterval(() => {
-        catchTimeLeft--;
-        const m = Math.floor(catchTimeLeft / 60);
-        const s = catchTimeLeft % 60;
-        document.getElementById('catch-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-        if (catchTimeLeft <= 0 || catchScore >= 8) endCatchGame();
-      }, 1000);
+function startCatchGame() {
+  catchScore = 0;
+  catchTimeLeft = 35;
+  document.getElementById('catch-score').textContent = '0';
+  document.getElementById('catch-timer').textContent = '0:35';
+  document.getElementById('game1-area').innerHTML = '';
+
+  catchInterval = setInterval(spawnFalling, 480);
+
+  catchTimerInterval = setInterval(() => {
+    catchTimeLeft--;
+    const m = Math.floor(catchTimeLeft / 60);
+    const s = catchTimeLeft % 60;
+    document.getElementById('catch-timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    if (catchTimeLeft <= 0 || catchScore >= 8) {
+      endCatchGame();
     }
+  }, 1000);
+}
 
-    function spawnFalling() {
+function spawnFalling() {
   const area = document.getElementById('game1-area');
   if (!area) return;
 
-  const isGood = Math.random() > 0.45;
+  const isGood = Math.random() > 0.42;
   const el = document.createElement('div');
-  el.className = 'falling' + (isGood ? ' good' : '');
 
   if (isGood) {
-    // всегда берём из goodWords (эмодзи)
-    el.classList.add('heart');
-    el.textContent = goodWords[Math.floor(Math.random() * goodWords.length)];
+    el.className = 'falling good heart';
+    // Берём эмодзи + на всякий случай ставим запасной символ
+    const emoji = goodWords[Math.floor(Math.random() * goodWords.length)];
+    el.textContent = emoji || '♥';
   } else {
-    el.textContent = badWords[Math.floor(Math.random() * badWords.length)];
+    el.className = 'falling';
+    el.textContent = badWords[Math.floor(Math.random() * badWords.length)] || 'нет';
   }
 
-  el.style.left = (10 + Math.random() * 70) + '%';
-  el.style.top = '-40px';
+  // Защита от пустого текста
+  if (!el.textContent || el.textContent.trim() === '') {
+    el.textContent = isGood ? '♥' : 'нет';
+  }
+
+  el.style.left = (8 + Math.random() * 75) + '%';
+  el.style.top = '-50px';
   area.appendChild(el);
 
-  let pos = -40;
-  const speed = 1.8 + Math.random() * 1.4;
+  let pos = -50;
+  const speed = 1.9 + Math.random() * 1.5;
+
   const fall = setInterval(() => {
     pos += speed;
     el.style.top = pos + 'px';
-    if (pos > area.clientHeight + 20) {
+    if (pos > area.clientHeight + 30) {
       clearInterval(fall);
       el.remove();
     }
@@ -476,23 +487,25 @@
   el.addEventListener('click', () => {
     clearInterval(fall);
     el.classList.add('caught');
+
     if (isGood) {
       catchScore++;
       document.getElementById('catch-score').textContent = catchScore;
-      showReaction(['Есть!', 'Хорошо', 'Поймала', 'Ок'][Math.floor(Math.random()*4)]);
+      showReaction(['Есть!', 'Хорошо', 'Поймала', 'Ок', 'Красота'][Math.floor(Math.random() * 5)]);
       if (catchScore >= 8) endCatchGame();
     } else {
-      showReaction(['Не то', 'Мимо', 'Нет'][Math.floor(Math.random()*3)]);
+      showReaction(['Не то', 'Мимо', 'Нет', 'Мимо мимо'][Math.floor(Math.random() * 4)]);
     }
+
     setTimeout(() => el.remove(), 280);
   });
 }
 
-    function endCatchGame() {
-      clearInterval(catchInterval);
-      clearInterval(catchTimerInterval);
-      setTimeout(() => showScreen('screen-game1-result'), 500);
-    }
+function endCatchGame() {
+  clearInterval(catchInterval);
+  clearInterval(catchTimerInterval);
+  setTimeout(() => showScreen('screen-game1-result'), 450);
+}
 
     // ===== GAME 2: SWIPE =====
     const swipeCards = [
