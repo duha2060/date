@@ -443,50 +443,50 @@
     }
 
     function spawnFalling() {
-      const area = document.getElementById('game1-area');
-      if (!area) return;
+  const area = document.getElementById('game1-area');
+  if (!area) return;
 
-      const isGood = Math.random() > 0.45;
-      const el = document.createElement('div');
-      el.className = 'falling' + (isGood ? ' good' : '');
+  const isGood = Math.random() > 0.45;
+  const el = document.createElement('div');
+  el.className = 'falling' + (isGood ? ' good' : '');
 
-      if (isGood && Math.random() > 0.5) {
-        el.classList.add('heart');
-        el.textContent = ['❤️','💕','💖','✨'][Math.floor(Math.random()*4)];
-      } else {
-        const list = isGood ? goodWords.filter(w => w.length > 2) : badWords;
-        el.textContent = list[Math.floor(Math.random() * list.length)];
-      }
+  if (isGood) {
+    // всегда берём из goodWords (эмодзи)
+    el.classList.add('heart');
+    el.textContent = goodWords[Math.floor(Math.random() * goodWords.length)];
+  } else {
+    el.textContent = badWords[Math.floor(Math.random() * badWords.length)];
+  }
 
-      el.style.left = (10 + Math.random() * 70) + '%';
-      el.style.top = '-40px';
-      area.appendChild(el);
+  el.style.left = (10 + Math.random() * 70) + '%';
+  el.style.top = '-40px';
+  area.appendChild(el);
 
-      let pos = -40;
-      const speed = 1.8 + Math.random() * 1.4;
-      const fall = setInterval(() => {
-        pos += speed;
-        el.style.top = pos + 'px';
-        if (pos > area.clientHeight + 20) {
-          clearInterval(fall);
-          el.remove();
-        }
-      }, 16);
-
-      el.addEventListener('click', () => {
-        clearInterval(fall);
-        el.classList.add('caught');
-        if (isGood) {
-          catchScore++;
-          document.getElementById('catch-score').textContent = catchScore;
-          showReaction(['Есть!', 'Хорошо', 'Поймала', 'Ок'][Math.floor(Math.random()*4)]);
-          if (catchScore >= 8) endCatchGame();
-        } else {
-          showReaction(['Не то', 'Мимо', 'Нет'][Math.floor(Math.random()*3)]);
-        }
-        setTimeout(() => el.remove(), 280);
-      });
+  let pos = -40;
+  const speed = 1.8 + Math.random() * 1.4;
+  const fall = setInterval(() => {
+    pos += speed;
+    el.style.top = pos + 'px';
+    if (pos > area.clientHeight + 20) {
+      clearInterval(fall);
+      el.remove();
     }
+  }, 16);
+
+  el.addEventListener('click', () => {
+    clearInterval(fall);
+    el.classList.add('caught');
+    if (isGood) {
+      catchScore++;
+      document.getElementById('catch-score').textContent = catchScore;
+      showReaction(['Есть!', 'Хорошо', 'Поймала', 'Ок'][Math.floor(Math.random()*4)]);
+      if (catchScore >= 8) endCatchGame();
+    } else {
+      showReaction(['Не то', 'Мимо', 'Нет'][Math.floor(Math.random()*3)]);
+    }
+    setTimeout(() => el.remove(), 280);
+  });
+}
 
     function endCatchGame() {
       clearInterval(catchInterval);
